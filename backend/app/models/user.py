@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Integer, String, text
+from sqlalchemy import DateTime, Integer, String, text
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -15,7 +16,7 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
     full_name: Mapped[str] = mapped_column(String(200), nullable=False)
     plan: Mapped[str] = mapped_column(
-        Enum("free", "paid", name="plan_enum"),
+        ENUM("free", "paid", name="plan_enum", create_type=False),
         nullable=False,
         server_default="free",
     )

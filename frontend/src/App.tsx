@@ -5,6 +5,9 @@ import DashboardPage from "./pages/DashboardPage";
 import AddExpensePage from "./pages/AddExpensePage";
 import ScanReceiptPage from "./pages/ScanReceiptPage";
 
+// Prevent body from scrolling behind fixed bottom nav on desktop preview
+import "./index.css";
+
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
   return token ? <>{children}</> : <Navigate to="/login" replace />;

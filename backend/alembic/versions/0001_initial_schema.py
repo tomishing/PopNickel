@@ -8,7 +8,7 @@ Create Date: 2026-06-25 00:00:00.000000
 from typing import Sequence, Union
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
 
 from alembic import op
 
@@ -17,15 +17,16 @@ down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
+plan_enum = ENUM("free", "paid", name="plan_enum", create_type=False)
+source_enum = ENUM("manual", "receipt", name="source_enum", create_type=False)
+period_enum = ENUM("monthly", "weekly", name="period_enum", create_type=False)
+
 
 def upgrade() -> None:
     # --- enums -----------------------------------------------------------
-    plan_enum = sa.Enum("free", "paid", name="plan_enum")
-    source_enum = sa.Enum("manual", "receipt", name="source_enum")
-    period_enum = sa.Enum("monthly", "weekly", name="period_enum")
-    plan_enum.create(op.get_bind(), checkfirst=True)
-    source_enum.create(op.get_bind(), checkfirst=True)
-    period_enum.create(op.get_bind(), checkfirst=True)
+    op.execute("CREATE TYPE plan_enum AS ENUM ('free', 'paid')")
+    op.execute("CREATE TYPE source_enum AS ENUM ('manual', 'receipt')")
+    op.execute("CREATE TYPE period_enum AS ENUM ('monthly', 'weekly')")
 
     # --- users -----------------------------------------------------------
     op.create_table(
@@ -34,12 +35,7 @@ def upgrade() -> None:
         sa.Column("email", sa.String(254), nullable=False),
         sa.Column("hashed_password", sa.String(), nullable=False),
         sa.Column("full_name", sa.String(200), nullable=False),
-        sa.Column(
-            "plan",
-            sa.Enum("free", "paid", name="plan_enum", create_type=False),
-            nullable=False,
-            server_default="free",
-        ),
+        sa.Column("plan", plan_enum, nullable=False, server_default="free"),
         sa.Column("stripe_customer_id", sa.String(), nullable=True),
         sa.Column("stripe_subscription_id", sa.String(), nullable=True),
         sa.Column("scans_used_this_month", sa.Integer(), nullable=False, server_default=sa.text("0")),
@@ -84,12 +80,7 @@ def upgrade() -> None:
         sa.Column("currency", sa.String(3), nullable=False, server_default="CAD"),
         sa.Column("description", sa.String(), nullable=False),
         sa.Column("date", sa.Date(), nullable=False),
-        sa.Column(
-            "source",
-            sa.Enum("manual", "receipt", name="source_enum", create_type=False),
-            nullable=False,
-            server_default="manual",
-        ),
+        sa.Column("source", source_enum, nullable=False, server_default="manual"),
         sa.Column("receipt_id", UUID(as_uuid=True), sa.ForeignKey("receipts.id", ondelete="SET NULL"), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("now()")),
     )
@@ -114,12 +105,7 @@ def upgrade() -> None:
         sa.Column("user_id", UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
         sa.Column("category_id", UUID(as_uuid=True), sa.ForeignKey("categories.id"), nullable=False),
         sa.Column("amount", sa.Numeric(10, 2), nullable=False),
-        sa.Column(
-            "period",
-            sa.Enum("monthly", "weekly", name="period_enum", create_type=False),
-            nullable=False,
-            server_default="monthly",
-        ),
+        sa.Column("period", period_enum, nullable=False, server_default="monthly"),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("now()")),
     )
     op.create_index("ix_budgets_user_id", "budgets", ["user_id"])
@@ -133,6 +119,6 @@ def downgrade() -> None:
     op.drop_table("categories")
     op.drop_table("users")
 
-    sa.Enum(name="period_enum").drop(op.get_bind(), checkfirst=True)
-    sa.Enum(name="source_enum").drop(op.get_bind(), checkfirst=True)
-    sa.Enum(name="plan_enum").drop(op.get_bind(), checkfirst=True)
+    op.execute("DROP TYPE IF EXISTS period_enum")
+    op.execute("DROP TYPE IF EXISTS source_enum")
+    op.execute("DROP TYPE IF EXISTS plan_enum")

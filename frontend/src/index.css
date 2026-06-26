@@ -1,3 +1,40 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* Force light color-scheme so no browser/OS dark-mode override can flip our colors */
+  html {
+    color-scheme: light;
+  }
+
+  html, body, #root {
+    height: 100%;
+    font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  body {
+    /* Desktop chrome — dark surround so the phone frame pops */
+    background-color: #1C1B1F;
+  }
+
+  /* Remove number input spinners */
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+
+  /* Hide scrollbar but keep scrolling */
+  ::-webkit-scrollbar { display: none; }
+  * { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+@layer utilities {
+  .state-hover:hover  { background-color: rgba(79, 70, 229, 0.08); }
+  .state-pressed:active { background-color: rgba(79, 70, 229, 0.12); }
+}
+
+@keyframes scan {
+  0%   { transform: translateY(0); opacity: 1; }
+  50%  { opacity: 0.4; }
+  100% { transform: translateY(var(--scan-height, 300px)); opacity: 1; }
+}

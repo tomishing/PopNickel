@@ -1,5 +1,6 @@
 import uuid
-from datetime import date, datetime
+from datetime import date as DateType
+from datetime import datetime
 from decimal import Decimal
 
 from pydantic import BaseModel
@@ -9,7 +10,7 @@ class ExpenseCreate(BaseModel):
     category_id: uuid.UUID
     amount: Decimal
     description: str
-    date: date
+    date: DateType
     currency: str = "CAD"
 
 
@@ -17,7 +18,7 @@ class ExpenseUpdate(BaseModel):
     category_id: uuid.UUID | None = None
     amount: Decimal | None = None
     description: str | None = None
-    date: date | None = None
+    date: DateType | None = None
 
 
 class ExpenseOut(BaseModel):
@@ -27,7 +28,7 @@ class ExpenseOut(BaseModel):
     amount: Decimal
     currency: str
     description: str
-    date: date
+    date: DateType
     source: str
     receipt_id: uuid.UUID | None
     created_at: datetime
