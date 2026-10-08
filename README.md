@@ -2,10 +2,10 @@
 
 Household expense tracking app for Android. Scan receipts with OCR, track spending by category, and manage monthly budgets.
 
-![home](assets/images/home.png)
-![login](assets/images/login.png)
-![Add an item](assets/images/addexpense.png)
-![Scan a reciept](assets/images/scan.png)
+<img src="assets/images/home.png" alt="home" width="182">
+<img src="assets/images/login.png" alt="login" width="189">
+<img src="assets/images/addexpense.png" alt="Add an item" width="182">
+<img src="assets/images/scan.png" alt="Scan a receipt" width="182">
 
 ## Tech stack
 
