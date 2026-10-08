@@ -19,7 +19,7 @@ Household expense tracking app for Android. Scan receipts with OCR, track spendi
 - JWT auth (register / login)
 - Manual expense entry with categories
 - Monthly expense list with category summary
-- Receipt scan → Claude vision parsing → confirm → save as expenses
+- Receipt scan → Google Cloud Vision OCR → Claude item parsing → confirm → save as expenses *(in progress, see [Next steps](#next-steps))*
 - Free tier: 10 receipt scans/month
 - Material You (M3) UI — styled as a native Pixel 8 Android app
 
@@ -28,23 +28,19 @@ Household expense tracking app for Android. Scan receipts with OCR, track spendi
 **Prerequisites:** Docker, Node.js 20+, Python 3.12
 
 ```bash
-# 1. Start PostgreSQL
-docker-compose up -d db
+# 1. Backend + PostgreSQL (Docker) → http://localhost:8000
+cp backend/.env.example backend/.env   # fill in SECRET_KEY (and API keys for receipt scanning)
+docker compose up -d
+docker compose exec backend alembic upgrade head
+docker compose exec backend python scripts/seed_categories.py   # first time only — not idempotent
 
-# 2. Backend
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env          # fill in SECRET_KEY and optionally ANTHROPIC_API_KEY
-alembic upgrade head
-python scripts/seed_categories.py
-uvicorn app.main:app --reload --port 8001
-
-# 3. Frontend (separate terminal)
+# 2. Frontend (separate terminal)
 cd frontend
-npm install --legacy-peer-deps
-npm run dev                   # → http://localhost:5173
+npm install
+npm run dev                            # → http://localhost:5173
 ```
+
+The backend container reloads automatically when files in `backend/` change. After changing `backend/requirements.txt`, rebuild it with `docker compose up -d --build backend`.
 
 Open **http://localhost:5173** in Chrome.
 
@@ -76,8 +72,8 @@ PopNickel/
 ```
 DATABASE_URL=postgresql+asyncpg://expense_user:expense_pass@localhost:5432/expense_db
 SECRET_KEY=your-secret-key-here
-ANTHROPIC_API_KEY=          # optional — enables Claude vision receipt parsing
-GOOGLE_CLOUD_VISION_API_KEY=
+ANTHROPIC_API_KEY=           # required for receipt scanning (item parsing)
+GOOGLE_CLOUD_VISION_API_KEY= # required for receipt scanning (OCR)
 R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
@@ -86,7 +82,7 @@ R2_BUCKET_NAME=
 
 **frontend/.env**
 ```
-VITE_API_BASE_URL=http://localhost:8001
+VITE_API_BASE_URL=http://localhost:8000
 ```
 
 ## API
@@ -103,4 +99,14 @@ VITE_API_BASE_URL=http://localhost:8001
 | POST | `/api/v1/receipts/scan` | Upload + parse receipt |
 | POST | `/api/v1/receipts/{id}/confirm` | Save parsed items as expenses |
 
-Interactive docs at **http://localhost:8001/docs**
+Interactive docs at **http://localhost:8000/docs**
+
+## Next steps
+
+Receipt scanning is not functional yet. The scan endpoint, quota check and review UI exist, but the image storage, OCR and parsing services are still stubs.
+
+1. **Backend scan pipeline**: implement image storage (local `uploads/`), Google Cloud Vision OCR and Claude item parsing so `POST /api/v1/receipts/scan` returns real items. Requires `GOOGLE_CLOUD_VISION_API_KEY` and `ANTHROPIC_API_KEY`.
+2. **Scan page**: use a file/photo picker in the browser to test the full flow (photo → review items → confirm → expenses saved).
+3. **Android**: `npx cap add android`, add real camera capture with `@capgo/camera-preview`, test on a device or emulator.
+4. **Tests**: registration, expense CRUD, scan quota.
+5. **Phase 2**: Stripe subscriptions, budget tracking, Cloudflare R2 storage.

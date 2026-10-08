@@ -339,13 +339,30 @@ npm run dev
 ```
 
 ## Phase 1 deliverable checklist
-- [ ] docker-compose.yml with FastAPI + PostgreSQL
-- [ ] Alembic migration for all Phase 1 tables
-- [ ] Seed script for default categories
-- [ ] JWT auth (register + login + /me)
-- [ ] CRUD endpoints for expenses + categories
-- [ ] Receipt scan endpoint (OCR pipeline)
-- [ ] React app with React Router (4 pages: Login, Dashboard, Add Expense, Scan Receipt)
-- [ ] Dashboard: monthly expense list + category bar chart
-- [ ] Scan flow: camera capture → review parsed items → confirm
-- [ ] Capacitor config for Android build
+- [x] docker-compose.yml with FastAPI + PostgreSQL
+- [x] Alembic migration for all Phase 1 tables
+- [x] Seed script for default categories
+- [x] JWT auth (register + login + /me)
+- [x] CRUD endpoints for expenses + categories
+- [ ] Receipt scan endpoint (OCR pipeline) — route + quota done; services are stubs (see Next steps)
+- [x] React app with React Router (4 pages: Login, Dashboard, Add Expense, Scan Receipt)
+- [x] Dashboard: monthly expense list + category bar chart
+- [ ] Scan flow: camera capture → review parsed items → confirm — UI only, no camera code yet
+- [x] Capacitor config for Android build (`android/` platform not added yet)
+
+---
+
+## Next steps (status as of 2026-10-08)
+
+Receipt scanning — the core feature — is not functional yet. These raise `NotImplementedError`:
+- `backend/app/services/storage.py` — save receipt image (local `uploads/` for prototype)
+- `backend/app/services/ocr.py` — Google Cloud Vision OCR
+- `backend/app/services/parser.py` — Claude API item extraction
+- `GOOGLE_CLOUD_VISION_API_KEY` and `ANTHROPIC_API_KEY` in `backend/.env` are empty
+
+Planned order:
+1. **Backend scan pipeline** — implement storage, OCR and parser services so `POST /api/v1/receipts/scan` returns real items. Requires both API keys.
+2. **Wire up the scan page** — use a file/photo picker in the browser to test the full flow: photo → review items → confirm → expenses saved.
+3. **Android** — `npx cap add android`, integrate `@capgo/camera-preview` for real camera capture, test on device/emulator.
+4. **Tests** — at minimum: registration, expense CRUD, scan quota.
+5. **Phase 2** — Stripe subscriptions, budget tracking, Cloudflare R2 storage.
